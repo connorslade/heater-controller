@@ -12,16 +12,23 @@ use arc_swap::ArcSwap;
 use clone_macro::clone;
 use eframe::{
     NativeOptions,
-    egui::{CentralPanel, Color32, Grid, Sense, Slider, Ui, ViewportBuilder, Widget, vec2},
+    egui::{
+        Align, CentralPanel, Color32, DragValue, Grid, Layout, ProgressBar, Sense, Slider, Ui,
+        Vec2, ViewportBuilder, ViewportCommand, Widget, vec2,
+    },
 };
 use ftdi_embedded_hal::{FtHal, eh1::digital::OutputPin};
 
 #[derive(Default)]
 struct App {
     interface: Control,
+    soft_start: SoftStart,
+    start: Option<Instant>,
 
     control: Arc<ArcSwap<Control>>,
     output: Arc<AtomicBool>,
+
+    prev_size: Vec2,
 }
 
 #[derive(Clone)]
@@ -29,6 +36,11 @@ struct Control {
     freq: f32,
     duty: f32,
     active: bool,
+}
+
+struct SoftStart {
+    enabled: bool,
+    duration: f32,
 }
 
 fn main() -> Result<()> {
@@ -68,14 +80,19 @@ fn main() -> Result<()> {
     eframe::run_native(
         "Heater Control",
         NativeOptions {
-            viewport: ViewportBuilder::default().with_inner_size([250.0, 120.0]),
+            viewport: ViewportBuilder::default().with_inner_size([1.0, 1.0]),
             ..Default::default()
         },
         Box::new(|_cc| {
             Ok(Box::new(App {
                 interface: Control::default(),
+                soft_start: SoftStart::default(),
+                start: None,
+
                 control,
                 output,
+
+                prev_size: Default::default(),
             }))
         }),
     )?;
@@ -84,13 +101,12 @@ fn main() -> Result<()> {
 
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
-        CentralPanel::default().show(ui, |ui| {
-            ui.heading("Heater Control");
-            ui.add_space(8.0);
+        ui.visuals_mut().collapsing_header_frame = true;
 
+        CentralPanel::default().show(ui, |ui| {
             Grid::new("settings").striped(true).show(ui, |ui| {
                 ui.label("Frequency");
-                Slider::new(&mut self.interface.freq, 0.1..=60.0)
+                Slider::new(&mut self.interface.freq, 0.1..=30.0)
                     .suffix(" Hz")
                     .ui(ui);
                 ui.end_row();
@@ -99,6 +115,32 @@ impl eframe::App for App {
                 Slider::new(&mut self.interface.duty, 0.01..=1.0).ui(ui);
                 ui.end_row();
             });
+
+            ui.add_space(8.0);
+            self.soft_start.enabled = collapsing_toggle(
+                "Soft Start",
+                self.soft_start.enabled,
+                |ui| {
+                    Grid::new("soft start").striped(true).show(ui, |ui| {
+                        ui.label("Startup Time");
+                        DragValue::new(&mut self.soft_start.duration)
+                            .suffix(" s")
+                            .ui(ui);
+                        ui.end_row();
+                    });
+
+                    ui.add_space(8.0);
+                    if let Some(start) = self.start
+                        && self.soft_start.enabled
+                    {
+                        let t = start.elapsed().as_secs_f32() / self.soft_start.duration;
+                        if t < 1.0 {
+                            ProgressBar::new(t.clamp(0.0, 1.0)).ui(ui);
+                        }
+                    }
+                },
+                ui,
+            );
 
             ui.add_space(8.0);
             ui.horizontal(|ui| {
@@ -115,26 +157,71 @@ impl eframe::App for App {
                     },
                 );
 
-                self.interface.active ^= ui
-                    .button(if self.interface.active {
-                        "Stop"
-                    } else {
-                        "Start"
-                    })
+                let clicked = ui
+                    .button(["Start", "Stop"][self.interface.active as usize])
                     .clicked();
+                self.interface.active ^= clicked;
+
+                if clicked {
+                    match self.interface.active {
+                        true => self.start = Some(Instant::now()),
+                        false => self.start = None,
+                    }
+                }
             });
         });
 
-        self.control.swap(Arc::new(self.interface.clone()));
+        let duty = if let Some(start) = self.start
+            && self.soft_start.enabled
+        {
+            let t = start.elapsed().as_secs_f32() / self.soft_start.duration;
+            self.interface.duty * t.clamp(0.0, 1.0)
+        } else {
+            self.interface.duty
+        };
+
+        self.control.swap(Arc::new(Control {
+            freq: self.interface.freq,
+            duty,
+            active: self.interface.active,
+        }));
+
+        let size = ui.ctx().globally_used_rect().size();
+        if size != self.prev_size {
+            self.prev_size = size;
+            ui.send_viewport_cmd(ViewportCommand::InnerSize(size));
+        }
     }
+}
+
+fn collapsing_toggle(
+    title: &str,
+    mut toggle: bool,
+    content: impl FnOnce(&mut Ui),
+    ui: &mut Ui,
+) -> bool {
+    ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
+        ui.checkbox(&mut toggle, "");
+        ui.collapsing(title, |ui| content(ui));
+    });
+    toggle
 }
 
 impl Default for Control {
     fn default() -> Self {
         Self {
-            freq: 10.0,
+            freq: 5.0,
             duty: 0.5,
             active: false,
+        }
+    }
+}
+
+impl Default for SoftStart {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            duration: 60.0,
         }
     }
 }
