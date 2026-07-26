@@ -1,0 +1,12 @@
+[package]
+name = "heater-control"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.104"
+ftdi = "0.1.3"
+ftdi-embedded-hal = { version = "0.24.0", features = ["libftd2xx", "libftd2xx-static"] }
+eframe = "0.35.0"
+clone-macro = "1.0.0"
+arc-swap = "1.9.2"
