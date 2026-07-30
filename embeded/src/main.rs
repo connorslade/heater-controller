@@ -43,7 +43,7 @@ async fn heater(mut pwm: SimplePwm<'static, TIM1>) {
     // Ramp to 10%
     let start = Instant::now();
     let ramp_time = 60.0;
-    let max_power = 0.1;
+    let max_power = 0.023;
 
     loop {
         let t = start.elapsed().as_secs() as f32 / ramp_time;
@@ -64,7 +64,7 @@ async fn main(spawner: Spawner) {
         None,
         None,
         None,
-        Hertz(5),
+        Hertz(1),
         CountingMode::EdgeAlignedUp,
     );
 
