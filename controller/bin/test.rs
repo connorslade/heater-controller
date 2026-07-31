@@ -8,8 +8,8 @@ fn main() {
     let delta = 10.0; // Numerical integration dt (s)
 
     let goal = 54.44; // Goal temperature (°C)
-    let time_offset = 60.0; // Steady state switch offset (s)
-    let power_max = 600.0 * 1.0; // Power for initial heating (W)
+    let time_offset = 30.0; // Steady state switch offset (s)
+    let power_max = 600.0 * 0.5; // Power for initial heating (W)
     let soft_start = 60.0; // Time to ramp up to max power (s)
     let power_steady = steady_state(goal, amb);
 
@@ -25,7 +25,10 @@ fn main() {
         temp = simulate(temp, amb, power, 60.0, delta); // simulate next minute
         let next = simulate(temp, amb, power, 60.0 + time_offset, delta);
         if next >= goal {
-            println!("Switching to steady state at t={:.1}m", t / 60.0);
+            println!(
+                "Switching to steady state ({power_steady:.1}W) at t={:.1}m",
+                t / 60.0
+            );
             goal_power = power_steady;
         }
 

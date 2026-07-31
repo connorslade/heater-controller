@@ -14,13 +14,13 @@ fn main() -> Result<()> {
         .append(true)
         .open("out.csv")?;
 
-    let elf_path = "../embeded/target/thumbv6m-none-eabi/release/embeded";
+    let elf_path = "../../embeded/target/thumbv6m-none-eabi/release/embeded";
     let elf_bytes = std::fs::read(elf_path)?;
     let table = Table::parse(&elf_bytes)?.unwrap();
 
     let mut session = Session::auto_attach("STM32C011F4", SessionConfig::default())?;
     let mut core = session.core(0)?;
-    core.reset()?;
+    // core.reset()?;
 
     let mut rtt = probe_rs::rtt::Rtt::attach(&mut core)?;
 
