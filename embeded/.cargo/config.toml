@@ -1,8 +1,12 @@
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-runner = "probe-rs run --speed 100 --chip STM32C011F4"
+runner = "probe-rs run --speed 1000 --protocol swd --chip STM32C011F4"
 
 [build]
 target = "thumbv6m-none-eabi"
+
+[unstable]
+build-std = ["core", "alloc"]
+build-std-features = ["compiler-builtins-mem"]
 
 [env]
 DEFMT_LOG = "trace"
