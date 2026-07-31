@@ -44,7 +44,7 @@ impl Controller {
             }
             State::Holding => {
                 let power_steady = steady_state(self.goal, amb);
-                power_steady / HEATER_POWER
+                (power_steady / HEATER_POWER).clamp(0.0, 1.0)
             }
         }
     }

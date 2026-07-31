@@ -12,9 +12,7 @@ embassy-executor = { version = "0.10.0", features = ["defmt", "platform-cortex-m
 embassy-stm32 = { version = "0.6.0", features = ["defmt", "stm32c011f4", "time-driver-any", "memory-x"] }
 embassy-sync = "0.8.0"
 embassy-time = { version = "0.5.1", features = ["defmt", "tick-hz-32_768"] }
-# libm = "0.2.16"
 micromath = "2.1.0"
-# panic-probe = { version = "1.0.0", features = ["print-defmt"] }
 uom = { version = "0.38.0", default-features = false, features = ["si", "autoconvert", "f32"] }
 
 [profile.release]
