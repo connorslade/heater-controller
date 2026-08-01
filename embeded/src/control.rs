@@ -1,4 +1,3 @@
-use defmt::info;
 use embassy_time::Instant;
 use micromath::F32Ext;
 
@@ -6,9 +5,9 @@ use crate::config::system::{C1, C2, DT, HEATER_POWER, POWER_MAX, SOFT_START, TIM
 
 pub struct Controller {
     pub start: Instant,
-    state: State,
+    pub state: State,
 
-    goal: f32,
+    pub goal: f32,
 }
 
 pub enum State {
@@ -36,7 +35,6 @@ impl Controller {
                 // temperature is above the goal, switch to hold mode.
                 let next = simulate(temp, amb, power * HEATER_POWER, TIME_OFFSET, DT);
                 if next >= self.goal {
-                    info!("Holding!");
                     self.state = State::Holding;
                 }
 

@@ -4,8 +4,7 @@
 use core::panic::PanicInfo;
 
 use cortex_m::prelude::_embedded_hal_Pwm;
-use defmt::info;
-use defmt_rtt as _;
+// use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_stm32::{
     bind_interrupts, dma,
@@ -27,10 +26,7 @@ use ssd1306::{
 };
 
 use crate::{
-    config::system::{HEATER_POWER, SAMPLE_PEROID},
-    control::Controller,
-    display::render,
-    thermometer::Thermometer,
+    config::system::SAMPLE_PEROID, control::Controller, display::render, thermometer::Thermometer,
 };
 
 mod config;
@@ -76,15 +72,15 @@ async fn main(_spawner: Spawner) {
             (pwm.max_duty_cycle() as f32 * power).round() as u32,
         );
 
-        render(&mut display, power);
-        info!(
-            "T={}°C ({}°F) P={}W ({}%) E={}",
-            t,
-            t * 1.8 + 32.0,
-            power * HEATER_POWER,
-            power * 100.0,
-            controller.start.elapsed().as_millis()
-        );
+        render(&mut display, &controller, power, t);
+        // info!(
+        //     "T={}°C ({}°F) P={}W ({}%) E={}",
+        //     t,
+        //     t * 1.8 + 32.0,
+        //     power * HEATER_POWER,
+        //     power * 100.0,
+        //     controller.start.elapsed().as_millis()
+        // );
 
         ticker.next().await;
     }

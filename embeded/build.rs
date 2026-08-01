@@ -13,7 +13,7 @@ fn main() {
 
     println!("cargo:rustc-link-arg-bins=--nmagic");
     println!("cargo:rustc-link-arg-bins=-Tlink.x");
-    println!("cargo:rustc-link-arg-bins=-Tdefmt.x");
+    // println!("cargo:rustc-link-arg-bins=-Tdefmt.x");
 }
 
 fn generate_font_data() -> String {
