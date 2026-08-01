@@ -12,7 +12,9 @@ pub struct Controller {
 
 pub enum State {
     Heating,
+    // Cooling,
     Holding,
+    // Idle,
 }
 
 impl Controller {
@@ -34,16 +36,30 @@ impl Controller {
                 // Simulate TIME_OFFSET seconds into the future. If the
                 // temperature is above the goal, switch to hold mode.
                 let next = simulate(temp, amb, power * HEATER_POWER, TIME_OFFSET, DT);
-                if next >= self.goal {
-                    self.state = State::Holding;
-                }
+                (next >= self.goal).then(|| self.state = State::Holding);
 
                 power
             }
+            // State::Cooling => {
+            //     let next = simulate(temp, amb, 0.0, TIME_OFFSET, DT);
+            //     (next <= self.goal).then(|| self.state = State::Holding);
+            //     0.0
+            // }
             State::Holding => {
                 let power_steady = steady_state(self.goal, amb);
                 (power_steady / HEATER_POWER).clamp(0.0, 1.0)
-            }
+            } // State::Idle => 0.0,
+        }
+    }
+}
+
+impl State {
+    pub fn name(&self) -> &str {
+        match self {
+            State::Heating => "HEATING",
+            // State::Cooling => "COOLING",
+            State::Holding => "HOLDING",
+            // State::Idle => "IDLE",1
         }
     }
 }

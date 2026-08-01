@@ -1,6 +1,6 @@
 use crate::{
     config::system::HEATER_POWER,
-    control::{Controller, State, simulate},
+    control::{Controller, simulate},
     display::{Bounds, Ui, Vec2, font::CHAR_SIZE},
 };
 
@@ -17,6 +17,7 @@ pub fn ui(ui: &mut Ui, controller: &Controller, power: f32, temp: f32) {
     ui.frame(STATUS_BAR, |ui| {
         ui.space(Vec2::splat(PADDING));
         ui.draw_string_inverted((1, 1), "STATUS");
+        // ui.draw_string((30, 1), "\u{E006}");
         ui.space_y(LINE_HEIGHT + 2);
 
         let elapsed = controller.start.elapsed().as_secs();
@@ -38,27 +39,23 @@ pub fn ui(ui: &mut Ui, controller: &Controller, power: f32, temp: f32) {
         ui.draw_string_inverted((1, 1), "THERMO");
         ui.space_y(LINE_HEIGHT + 2);
 
-        ui.draw_value((0, 0), "TG ", "°C", controller.goal as u32);
+        ui.draw_value((0, 0), "T\u{E004}\u{E005}", "°C", controller.goal as u32);
         ui.space_y(LINE_HEIGHT);
-        ui.draw_value((0, 0), "T\u{E002} ", "°C", temp as u32);
+        ui.draw_value((0, 0), "T\u{E003}\u{E005}", "°C", temp as u32);
         ui.space_y(LINE_HEIGHT);
-        ui.draw_value((0, 0), "T\u{E003} ", "°C", temp as u32);
+        ui.draw_value((0, 0), "T\u{E002}\u{E005}", "°C", temp as u32);
     });
 
     ui.frame(HEATER_PANEL, |ui| {
         ui.space(Vec2::splat(PADDING));
 
-        let mode = match controller.state {
-            State::Heating => "HEATING",
-            State::Holding => "HOLDING",
-        };
-        ui.draw_string_inverted((1, 1), mode);
+        ui.draw_string_inverted((1, 1), controller.state.name());
         ui.space_y(LINE_HEIGHT + 2);
 
-        ui.draw_value((0, 0), "", "W", (power * HEATER_POWER) as u32);
+        ui.draw_value((0, 0), "P\u{E005}", "W", (power * HEATER_POWER) as u32);
         ui.space_y(LINE_HEIGHT);
 
-        ui.draw_value((0, 0), "", "%", (power * 100.0) as u32);
+        ui.draw_value((0, 0), "U\u{E005}", "%", (power * 100.0) as u32);
     });
 
     ui.frame(TEMPATURE_HISTORY, |ui| {
