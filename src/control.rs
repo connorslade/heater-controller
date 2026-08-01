@@ -12,9 +12,9 @@ pub struct Controller {
 
 pub enum State {
     Heating,
-    // Cooling,
+    Cooling,
     Holding,
-    // Idle,
+    Idle,
 }
 
 impl Controller {
@@ -40,15 +40,16 @@ impl Controller {
 
                 power
             }
-            // State::Cooling => {
-            //     let next = simulate(temp, amb, 0.0, TIME_OFFSET, DT);
-            //     (next <= self.goal).then(|| self.state = State::Holding);
-            //     0.0
-            // }
+            State::Cooling => {
+                let next = simulate(temp, amb, 0.0, TIME_OFFSET, DT);
+                (next <= self.goal).then(|| self.state = State::Holding);
+                0.0
+            }
             State::Holding => {
                 let power_steady = steady_state(self.goal, amb);
                 (power_steady / HEATER_POWER).clamp(0.0, 1.0)
-            } // State::Idle => 0.0,
+            }
+            State::Idle => 0.0,
         }
     }
 }
@@ -57,9 +58,9 @@ impl State {
     pub fn name(&self) -> &str {
         match self {
             State::Heating => "HEATING",
-            // State::Cooling => "COOLING",
+            State::Cooling => "COOLING",
             State::Holding => "HOLDING",
-            // State::Idle => "IDLE",1
+            State::Idle => "IDLE",
         }
     }
 }

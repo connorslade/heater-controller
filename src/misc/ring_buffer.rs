@@ -4,10 +4,12 @@
 //!
 //! Modified from my [radio-data](https://github.com/connorslade/radio-data/blob/master/src/misc/ring_buffer.rs) project.
 
+use core::mem::MaybeUninit;
+
 /// Ring buffer that can hold any type.
 /// The size of the buffer is defined as SIZE at compile time so it can be stored on the stack.
 pub struct RingBuffer<T, const SIZE: usize> {
-    pub data: [T; SIZE],
+    pub data: [MaybeUninit<T>; SIZE],
     pub index: usize,
     pub filled: bool,
 }
@@ -16,7 +18,7 @@ impl<T: Default + Copy, const SIZE: usize> RingBuffer<T, SIZE> {
     /// Create a new RingBuffer using T::default().
     pub fn new() -> Self {
         Self {
-            data: [T::default(); SIZE],
+            data: [const { MaybeUninit::uninit() }; SIZE],
             index: 0,
             filled: false,
         }
@@ -26,7 +28,7 @@ impl<T: Default + Copy, const SIZE: usize> RingBuffer<T, SIZE> {
 impl<T, const SIZE: usize> RingBuffer<T, SIZE> {
     /// Adds a new value to the buffer
     pub fn push(&mut self, val: T) {
-        self.data[self.index] = val;
+        self.data[self.index].write(val);
         let idx = self.index + 1;
         self.index = idx % SIZE;
 
@@ -38,7 +40,7 @@ impl<T, const SIZE: usize> RingBuffer<T, SIZE> {
     /// Gets the values that have actually been set.
     /// If self.filled is true, this will be the whole buffer,
     /// if not it will just be the values added by the user.
-    fn real(&self) -> &[T] {
+    fn real(&self) -> &[MaybeUninit<T>] {
         if self.filled {
             return &self.data;
         }
@@ -51,7 +53,9 @@ impl<const SIZE: usize> RingBuffer<f32, SIZE> {
     /// Get the average of the values from the buffer.
     pub fn avg(&self) -> f32 {
         let real = self.real();
-        let sum = real.iter().fold(0.0, |a, &b| a + b);
+        let sum = real
+            .iter()
+            .fold(0.0, |a, &b| a + unsafe { b.assume_init() });
         sum / real.len() as f32
     }
 }

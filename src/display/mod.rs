@@ -106,7 +106,7 @@ impl<'d, 'i> Ui<'d, 'i> {
         }
     }
 
-    pub fn chart<const N: usize>(&mut self, (min, max): (f32, f32), data: [f32; N]) {
+    pub fn draw_chart<const N: usize>(&mut self, (min, max): (f32, f32), data: [f32; N]) {
         let width = self.bounds.width();
         for x in 0..width {
             let t = x as f32 / (width - 1) as f32;
@@ -118,6 +118,12 @@ impl<'d, 'i> Ui<'d, 'i> {
 
             let y = (1.0 - (value - min) / (max - min)) * self.bounds.height() as f32;
             self.set_pixel(x, y as u32, true);
+        }
+    }
+
+    pub fn draw_line_horizontal(&mut self, (x, y): (u32, u32), width: u32) {
+        for i in 0..width {
+            self.set_pixel(x + i, y, i & 1 != 0);
         }
     }
 }
@@ -183,11 +189,17 @@ impl Sub<Vec2> for Vec2 {
     }
 }
 
-pub fn render<'a>(display: &mut Display<'a>, controller: &Controller, power: f32, temp: f32) {
+pub fn render<'a>(
+    display: &mut Display<'a>,
+    cpu_usage: f32,
+    controller: &Controller,
+    power: f32,
+    temp: f32,
+) {
     display.clear_buffer();
 
     let mut ui = Ui::new(display);
-    ui::ui(&mut ui, controller, power, temp);
+    ui::ui(&mut ui, cpu_usage, controller, power, temp);
 
     ui.display.flush().unwrap();
 }

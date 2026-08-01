@@ -1,3 +1,4 @@
+use embassy_futures::block_on;
 use embassy_stm32::{
     Peri,
     adc::{Adc, AdcChannel, AnyAdcChannel, Resolution, SampleTime, VREF_CALIB_MV},
@@ -35,20 +36,20 @@ impl<'a> Thermometer<'a> {
         }
     }
 
-    pub async fn sample(&mut self) -> f32 {
+    pub fn sample(&mut self) -> f32 {
         let mut readings = [0; 2];
-        self.adc
-            .read(
-                self.dma.reborrow(),
-                Irqs,
-                [
-                    (&mut self.liquid, SampleTime::CYCLES640_5),
-                    (&mut self.vref, SampleTime::CYCLES640_5),
-                ]
-                .into_iter(),
-                &mut readings,
-            )
-            .await;
+
+        let sequence = [
+            (&mut self.liquid, SampleTime::CYCLES640_5),
+            (&mut self.vref, SampleTime::CYCLES640_5),
+        ];
+        let future = self.adc.read(
+            self.dma.reborrow(),
+            Irqs,
+            sequence.into_iter(),
+            &mut readings,
+        );
+        block_on(future);
 
         let [input, vref] = readings;
         let vdd = (VREF_CALIB_MV as f32 * unsafe { *VREFINT_CAL } as f32) / vref as f32;
